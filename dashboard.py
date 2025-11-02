@@ -95,10 +95,18 @@ def criar_grafico_plotly(df, ticker):
         title=f'Análise Histórica - {ticker}',
         xaxis_title='Data',
         yaxis_title='Preço (R$ ou U$)',
-        legend_title='Métricas',
         hovermode="x unified",
         xaxis_rangeslider_visible=False,
-        dragmode=False 
+        dragmode=False,
+        
+        legend_title='Métricas',
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=-0.3,
+            xanchor="center",
+            x=0.5
+        )
     )
     
     fig.update_xaxes(fixedrange=True)
