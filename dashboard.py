@@ -98,12 +98,10 @@ def criar_grafico_plotly(df, ticker):
         hovermode="x unified",
         xaxis_rangeslider_visible=False,
         dragmode=False,
-        
-        legend_title='Métricas',
         legend=dict(
             orientation="h",
             yanchor="bottom",
-            y=-0.3,
+            y=1.02,
             xanchor="center",
             x=0.5
         )
@@ -126,7 +124,7 @@ ticker_selecionado = st.sidebar.selectbox(
 
 data_max_global = date.today()
 data_min_global = data_max_global - timedelta(days=365*5)
-data_inicio_padrao = data_max_global - timedelta(days=30)
+data_inicio_padrao = data_max_global - timedelta(days=60)
 
 if data_inicio_padrao < data_min_global:
     data_inicio_padrao = data_min_global
