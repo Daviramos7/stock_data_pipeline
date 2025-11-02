@@ -100,8 +100,15 @@ def criar_grafico_plotly(df, ticker):
         yaxis_title='Preço (R$ ou U$)',
         legend_title='Métricas',
         hovermode="x unified",
-        xaxis_rangeslider_visible=False
+        xaxis_rangeslider_visible=False,
+        # --- INÍCIO DA CORREÇÃO (Otimização Mobile) ---
+        dragmode=False # Desabilita o "arrastar" do gráfico
     )
+    
+    # Trava o zoom nos eixos X e Y
+    fig.update_xaxes(fixedrange=True)
+    fig.update_yaxes(fixedrange=True)
+    # --- FIM DA CORREÇÃO ---
     
     return fig
 
