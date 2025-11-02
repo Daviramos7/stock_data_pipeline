@@ -3,9 +3,8 @@
 > ### 🚀 Teste o aplicativo ao vivo:
 > **[https://stockdatapipeline-jnuaqfhrnt8jts3ymssrsp.streamlit.app/](https://stockdatapipeline-jnuaqfhrnt8jts3ymssrsp.streamlit.app/)**
 
-![Prévia do Dashboard](https://i.imgur.com/suBvBfA.png)
-*(Sugestão: Substitua o link acima por um screenshot seu, como este que você me enviou, para personalizar)*
-
+![Prévia do Dashboard]
+(./img/preview.jpg)
 ---
 
 ### 🛠️ Tecnologias Utilizadas
