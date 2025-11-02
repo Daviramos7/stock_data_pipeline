@@ -1,0 +1,13 @@
+# Ambiente Virtual do Python
+# (Nunca deve ir para o GitHub)
+venv/
+
+# Cache do Python
+__pycache__/
+
+# Script de ETL local
+# (Não é usado no deploy do Streamlit)
+etl.py
+
+# Arquivos de configuração do VS Code (Opcional, mas bom)
+.vscode/
