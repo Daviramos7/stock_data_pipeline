@@ -13,13 +13,13 @@ st.set_page_config(
 )
 
 # --- Constantes ---
-LISTA_TICKERS = [
-    "PETR4.SA",
-    "MGLU3.SA",
-    "AAPL",
-    "MSFT",
-    "GOOGL"
-]
+TICKER_MAP = {
+    "PETR4.SA": "Petrobras",
+    "MGLU3.SA": "Magazine Luiza",
+    "AAPL": "Apple",
+    "MSFT": "Microsoft",
+    "GOOGL": "Google"
+}
 
 # --- Funções ---
 @st.cache_data(ttl=3600)
@@ -100,7 +100,7 @@ def criar_grafico_plotly(df, ticker):
         yaxis_title='Preço (R$ ou U$)',
         legend_title='Métricas',
         hovermode="x unified",
-        xaxis_rangeslider_visible=False 
+        xaxis_rangeslider_visible=False
     )
     
     return fig
@@ -113,7 +113,8 @@ st.sidebar.header("Filtros")
 
 ticker_selecionado = st.sidebar.selectbox(
     "Selecione o Ticker:",
-    options=LISTA_TICKERS
+    options=TICKER_MAP.keys(), 
+    format_func=lambda ticker: f"{ticker} - {TICKER_MAP[ticker]}" 
 )
 
 data_max_global = date.today()
@@ -135,20 +136,58 @@ data_fim = st.sidebar.date_input(
 )
 
 # --- PÁGINA PRINCIPAL ---
-st.header(f"Analisando: {ticker_selecionado}")
+st.header(f"Analisando: {ticker_selecionado} ({TICKER_MAP[ticker_selecionado]})")
 
 df_filtrado_final = carregar_dados_api(ticker_selecionado, data_inicio, data_fim)
 
 if not df_filtrado_final.empty:
     df_filtrado_final = df_filtrado_final.sort_values(by='data')
-    
     df_analise = calcular_medias_moveis(df_filtrado_final, janelas=[7, 21])
     
-    fig = criar_grafico_plotly(df_analise, ticker_selecionado)
-    st.plotly_chart(fig, use_container_width=True)
+    ultimo_dia = df_analise.iloc[-1]
     
-    st.subheader(f"Dados Detalhados ({data_inicio.strftime('%d/%m/%Y')} até {data_fim.strftime('%d/%m/%Y')})")
-    st.dataframe(df_analise.sort_values(by='data', ascending=False), use_container_width=True)
+    if len(df_analise) > 1:
+        penultimo_dia = df_analise.iloc[-2]
+        ultimo_fechamento = ultimo_dia['fechamento']
+        delta_fechamento_abs = ultimo_dia['fechamento'] - penultimo_dia['fechamento']
+        delta_fechamento_pct = (delta_fechamento_abs / penultimo_dia['fechamento']) * 100
+    else:
+        ultimo_fechamento = ultimo_dia['fechamento']
+        delta_fechamento_abs = 0
+        delta_fechamento_pct = 0
 
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric(
+            label=f"Último Fechamento ({ultimo_dia['data'].strftime('%d/%m')})",
+            value=f"{ultimo_fechamento:.2f}",
+            delta=f"{delta_fechamento_abs:.2f} ({delta_fechamento_pct:.2f}%)"
+        )
+        
+    with col2:
+        st.metric(
+            label="Máxima (no período)",
+            value=f"{df_analise['maxima'].max():.2f}"
+        )
+
+    with col3:
+        st.metric(
+            label="Mínima (no período)",
+            value=f"{df_analise['minima'].min():.2f}"
+        )
+        
+    st.divider()
+
+    tab_grafico, tab_dados = st.tabs(["📈 Gráfico", "🗃️ Dados Detalhados"])
+
+    with tab_grafico:
+        fig = criar_grafico_plotly(df_analise, ticker_selecionado)
+        st.plotly_chart(fig, use_container_width=True)
+    
+    with tab_dados:
+        st.subheader(f"Dados Detalhados ({data_inicio.strftime('%d/%m/%Y')} até {data_fim.strftime('%d/%m/%Y')})")
+        st.dataframe(df_analise.sort_values(by='data', ascending=False), use_container_width=True)
+    
 else:
     st.warning("Nenhum dado encontrado para o ticker e período selecionados na API do Yahoo Finance.")
