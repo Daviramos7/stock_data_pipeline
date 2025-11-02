@@ -32,6 +32,11 @@ def carregar_dados_api(ticker, data_inicio, data_fim):
     if dados.empty:
         return pd.DataFrame()
 
+    # --- INÍCIO DA CORREÇÃO DO BUG ---
+    if isinstance(dados.columns, pd.MultiIndex):
+        dados.columns = dados.columns.get_level_values(0)
+    # --- FIM DA CORREÇÃO DO BUG ---
+
     dados = dados.reset_index()
     dados['ticker'] = ticker
     dados.columns = dados.columns.str.lower()
@@ -97,7 +102,7 @@ def criar_grafico_plotly(df, ticker):
         yaxis_title='Preço (R$ ou U$)',
         legend_title='Métricas',
         hovermode="x unified",
-        xaxis_rangeslider_visible=False
+        xaxis_ranges_lider_visible=False
     )
     
     return fig
