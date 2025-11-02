@@ -4,7 +4,7 @@
 > **[https://stockdatapipeline-jnuaqfhrnt8jts3ymssrsp.streamlit.app/](https://stockdatapipeline-jnuaqfhrnt8jts3ymssrsp.streamlit.app/)**
 
 ![Prévia do Dashboard]
-(/img/preview.jpg)
+(img/preview.jpg)
 ---
 
 ### 🛠️ Tecnologias Utilizadas
