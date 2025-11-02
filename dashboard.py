@@ -5,14 +5,12 @@ import plotly.graph_objects as go
 import time
 from datetime import timedelta, date
 
-# --- Configurações da Página ---
 st.set_page_config(
     page_title="Dashboard de Ações",
     page_icon="📈",
     layout="wide"
 )
 
-# --- Constantes ---
 TICKER_MAP = {
     "PETR4.SA": "Petrobras",
     "MGLU3.SA": "Magazine Luiza",
@@ -21,7 +19,6 @@ TICKER_MAP = {
     "GOOGL": "Google"
 }
 
-# --- Funções ---
 @st.cache_data(ttl=3600)
 def carregar_dados_api(ticker, data_inicio, data_fim):
     print(f"[{time.strftime('%H:%M:%S')}] Buscando dados da API para {ticker}...")
@@ -101,21 +98,16 @@ def criar_grafico_plotly(df, ticker):
         legend_title='Métricas',
         hovermode="x unified",
         xaxis_rangeslider_visible=False,
-        # --- INÍCIO DA CORREÇÃO (Otimização Mobile) ---
-        dragmode=False # Desabilita o "arrastar" do gráfico
+        dragmode=False # Trava o "arrastar" do gráfico
     )
     
-    # Trava o zoom nos eixos X e Y
-    fig.update_xaxes(fixedrange=True)
-    fig.update_yaxes(fixedrange=True)
-    # --- FIM DA CORREÇÃO ---
+    fig.update_xaxes(fixedrange=True) # Trava o zoom/pan do eixo X
+    fig.update_yaxes(fixedrange=True) # Trava o zoom/pan do eixo Y
     
     return fig
 
-# --- Início do App Streamlit ---
 st.title("📈 Dashboard de Análise de Ações (Live API)")
 
-# --- BARRA LATERAL (Sidebar) ---
 st.sidebar.header("Filtros")
 
 ticker_selecionado = st.sidebar.selectbox(
@@ -142,7 +134,6 @@ data_fim = st.sidebar.date_input(
     max_value=data_max_global
 )
 
-# --- PÁGINA PRINCIPAL ---
 st.header(f"Analisando: {ticker_selecionado} ({TICKER_MAP[ticker_selecionado]})")
 
 df_filtrado_final = carregar_dados_api(ticker_selecionado, data_inicio, data_fim)
@@ -162,27 +153,20 @@ if not df_filtrado_final.empty:
         ultimo_fechamento = ultimo_dia['fechamento']
         delta_fechamento_abs = 0
         delta_fechamento_pct = 0
-
-    col1, col2, col3 = st.columns(3)
     
-    with col1:
-        st.metric(
-            label=f"Último Fechamento ({ultimo_dia['data'].strftime('%d/%m')})",
-            value=f"{ultimo_fechamento:.2f}",
-            delta=f"{delta_fechamento_abs:.2f} ({delta_fechamento_pct:.2f}%)"
-        )
-        
-    with col2:
-        st.metric(
-            label="Máxima (no período)",
-            value=f"{df_analise['maxima'].max():.2f}"
-        )
-
-    with col3:
-        st.metric(
-            label="Mínima (no período)",
-            value=f"{df_analise['minima'].min():.2f}"
-        )
+    st.metric(
+        label=f"Último Fechamento ({ultimo_dia['data'].strftime('%d/%m')})",
+        value=f"{ultimo_fechamento:.2f}",
+        delta=f"{delta_fechamento_abs:.2f} ({delta_fechamento_pct:.2f}%)"
+    )
+    st.metric(
+        label="Máxima (no período)",
+        value=f"{df_analise['maxima'].max():.2f}"
+    )
+    st.metric(
+        label="Mínima (no período)",
+        value=f"{df_analise['minima'].min():.2f}"
+    )
         
     st.divider()
 
