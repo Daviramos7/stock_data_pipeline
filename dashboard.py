@@ -118,7 +118,7 @@ ticker_selecionado = st.sidebar.selectbox(
 
 data_max_global = date.today()
 data_min_global = data_max_global - timedelta(days=365*5)
-data_inicio_padrao = data_max_global - timedelta(days=90)
+data_inicio_padrao = data_max_global - timedelta(days=30)
 
 if data_inicio_padrao < data_min_global:
     data_inicio_padrao = data_min_global
@@ -145,20 +145,8 @@ if not df_filtrado_final.empty:
     df_filtrado_final = df_filtrado_final.sort_values(by='data')
     df_analise = calcular_medias_moveis(df_filtrado_final, janelas=[7, 21])
     
-    tab_grafico, tab_dados = st.tabs(["📈 Gráfico", "🗃️ Dados Detalhados"])
-
-    with tab_grafico:
-        fig = criar_grafico_plotly(df_analise, ticker_selecionado)
-        st.plotly_chart(fig, use_container_width=True)
-    
-    with tab_dados:
-        st.subheader(f"Dados Detalhados ({data_inicio.strftime('%d/%m/%Y')} até {data_fim.strftime('%d/%m/%Y')})")
-        st.dataframe(df_analise.sort_values(by='data', ascending=False), use_container_width=True)
-    
-    st.divider()
-
     st.subheader("Métricas do Período")
-    
+
     ultimo_dia = df_analise.iloc[-1]
     
     if len(df_analise) > 1:
@@ -171,26 +159,31 @@ if not df_filtrado_final.empty:
         delta_fechamento_abs = 0
         delta_fechamento_pct = 0
     
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.metric(
-            label=f"Último Fechamento ({ultimo_dia['data'].strftime('%d/%m')})",
-            value=f"{ultimo_fechamento:.2f}",
-            delta=f"{delta_fechamento_abs:.2f} ({delta_fechamento_pct:.2f}%)"
-        )
+    st.metric(
+        label=f"Último Fechamento ({ultimo_dia['data'].strftime('%d/%m')})",
+        value=f"{ultimo_fechamento:.2f}",
+        delta=f"{delta_fechamento_abs:.2f} ({delta_fechamento_pct:.2f}%)"
+    )
+    st.metric(
+        label="Máxima (no período)",
+        value=f"{df_analise['maxima'].max():.2f}"
+    )
+    st.metric(
+        label="Mínima (no período)",
+        value=f"{df_analise['minima'].min():.2f}"
+    )
         
-    with col2:
-        st.metric(
-            label="Máxima (no período)",
-            value=f"{df_analise['maxima'].max():.2f}"
-        )
+    st.divider()
+    
+    tab_grafico, tab_dados = st.tabs(["📈 Gráfico", "🗃️ Dados Detalhados"])
 
-    with col3:
-        st.metric(
-            label="Mínima (no período)",
-            value=f"{df_analise['minima'].min():.2f}"
-        )
+    with tab_grafico:
+        fig = criar_grafico_plotly(df_analise, ticker_selecionado)
+        st.plotly_chart(fig, use_container_width=True)
+    
+    with tab_dados:
+        st.subheader(f"Dados Detalhados ({data_inicio.strftime('%d/%m/%Y')} até {data_fim.strftime('%d/%m/%Y')})")
+        st.dataframe(df_analise.sort_values(by='data', ascending=False), use_container_width=True)
     
 else:
     st.warning("Nenhum dado encontrado para o ticker e período selecionados na API do Yahoo Finance.")
