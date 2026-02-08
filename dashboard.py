@@ -21,7 +21,10 @@ TICKER_MAP = {
 
 @st.cache_data(ttl=3600)
 def carregar_dados_api(ticker, data_inicio, data_fim):
-    print(f"[{time.strftime('%H:%M:%S')}] Buscando dados da API para {ticker}...")
+    inicio_processamento = time.time()
+    
+    print(f"[{time.strftime('%H:%M:%S')}] ⏳ Iniciando busca de dados para {ticker}...")
+    
     data_fim_yf = data_fim + timedelta(days=1)
     
     dados = yf.download(ticker, start=data_inicio, end=data_fim_yf, auto_adjust=True)
@@ -49,7 +52,11 @@ def carregar_dados_api(ticker, data_inicio, data_fim):
     colunas_finais = ['data', 'ticker', 'abertura', 'maxima', 'minima', 'fechamento', 'volume']
     colunas_existentes = [col for col in colunas_finais if col in dados.columns]
     
-    print(f"[{time.strftime('%H:%M:%S')}] Carga de {len(dados)} registros da API concluída.")
+    fim_processamento = time.time()
+    tempo_total = fim_processamento - inicio_processamento
+    
+    print(f"✅ [SUCESSO] Carga de {len(dados)} registros processada em {tempo_total:.4f} segundos.")
+    
     return dados[colunas_existentes]
 
 def calcular_medias_moveis(df, janelas=[7, 21]):
