@@ -1,0 +1,49 @@
+# medição 2026-11-19T09:30:45 | py 3.13.18 | yfinance 1.8.0 | pandas 3.0.5
+# janela 2025-11-18..2026-11-18
+
+## download (por ticker, 30 chamadas)
+mediana 0.027s | p90 0.575s | min 0.020s | max 0.713s
+## indicadores com time.time (como o app mede)
+mediana 2.73ms | linhas/ticker 248–252
+## indicadores perf_counter, 200 reps, 248 linhas: mediana 2.17ms → 114,388 linhas/s
+## batch 10 tickers numa chamada: 0.17s, shape (257, 50)
+
+## histórico máximo (period='max')
+PETR4.SA: 2000-01-03 → 2026-11-18 (6747 pregões) tz=America/Sao_Paulo
+MGLU3.SA: 2011-05-02 → 2026-11-18 (3867 pregões) tz=America/Sao_Paulo
+AAPL: 1980-12-12 → 2026-11-18 (11577 pregões) tz=America/New_York
+NVDA: 1999-01-22 → 2026-11-18 (7000 pregões) tz=America/New_York
+
+## feriados
+PETR4.SA 2025-11-20: sem linha
+PETR4.SA 2026-02-16: sem linha
+PETR4.SA 2026-02-17: sem linha
+PETR4.SA 2026-02-18: TEM linha (vol=32276700)
+PETR4.SA 2026-04-03: sem linha
+PETR4.SA 2026-04-21: sem linha
+AAPL 2025-11-27: sem linha
+AAPL 2025-11-28: TEM linha (vol=20135600)
+AAPL 2026-07-03: sem linha
+AAPL 2026-04-03: sem linha
+Quarta de Cinzas PETR4:
+                             Open       High        Low      Close    Volume
+Date                                                                       
+2026-02-18 00:00:00-03:00  37.07  37.389999  36.849998  37.189999  32276700
+
+## ajustes
+PETR4.SA: Close bruto 1º dia 37.78 | Adj Close 26.03 | auto_adjust Close 26.03
+  dividendos no período: 13 | splits: {}
+NVDA: Close bruto 1º dia 48.17 | Adj Close 48.03 | auto_adjust Close 48.03
+  dividendos no período: 11 | splits: {Timestamp('2024-06-10 00:00:00-0400', tz='America/New_York'): 10.0}
+NVDA em volta do split 10:1 (06/2024), Close já vem dividido retroativamente?
+                                 Close  Stock Splits
+Date                                               
+2024-06-05 00:00:00-04:00  122.440002           0.0
+2024-06-06 00:00:00-04:00  120.998001           0.0
+2024-06-07 00:00:00-04:00  120.888000           0.0
+2024-06-10 00:00:00-04:00  121.790001          10.0
+2024-06-11 00:00:00-04:00  120.910004           0.0
+2024-06-12 00:00:00-04:00  125.199997           0.0
+
+## rajada 60 chamadas 1y sem pausa
+ok 60 | falha 0 {} | 10.7s
