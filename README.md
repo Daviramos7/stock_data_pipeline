@@ -1,5 +1,7 @@
 # 📈 Dashboard de Análise Quantitativa de Ações
 
+![CI](https://github.com/Daviramos7/stock_data_pipeline/actions/workflows/ci.yml/badge.svg)
+
 > Dashboard interativo de análise técnica que baixa cotações sob demanda do Yahoo Finance, com cache de 1 h. Em evolução para um pipeline de dados de verdade (v2).
 
 > ⚠️ **Projeto educacional. Não é recomendação de investimento.** Dados do Yahoo Finance via `yfinance` (não oficial).
