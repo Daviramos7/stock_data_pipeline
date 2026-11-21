@@ -1,11 +1,18 @@
+import sys
+from pathlib import Path
+
+# O Streamlit Cloud roda `streamlit run dashboard.py` a partir da raiz do repo,
+# sem instalar o pacote; por isso colocamos src/ no path antes de importá-lo.
+sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
+
 import streamlit as st
-import pandas as pd
-import numpy as np
-import yfinance as yf
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-import time
 from datetime import timedelta, date
+
+from stock_pipeline.config import TICKER_MAP
+from stock_pipeline.formatting import moeda_do_ticker
+from stock_pipeline.ingestion import baixar_cotacoes
+from stock_pipeline.indicators import processar_indicadores
+from stock_pipeline.charts import criar_grafico_avancado
 
 st.set_page_config(
     page_title="Dashboard Pro - Análise Técnica",
@@ -13,128 +20,9 @@ st.set_page_config(
     layout="wide"
 )
 
-TICKER_MAP = {
-    "PETR4.SA": "Petrobras",
-    "VALE3.SA": "Vale",
-    "ITUB4.SA": "Itaú Unibanco",
-    "BBAS3.SA": "Banco do Brasil",
-    "WEGE3.SA": "WEG",
-    "MGLU3.SA": "Magazine Luiza",
-    "AAPL": "Apple",
-    "MSFT": "Microsoft",
-    "GOOGL": "Google",
-    "NVDA": "Nvidia"
-}
-
-def moeda_do_ticker(ticker):
-    return "R$" if ticker.upper().endswith(".SA") else "US$"
-
 @st.cache_data(ttl=3600)
 def carregar_dados_api(ticker, data_inicio, data_fim):
-    inicio = time.time()
-    
-    data_fim_yf = data_fim + timedelta(days=1)
-    dados = yf.download(ticker, start=data_inicio, end=data_fim_yf, auto_adjust=True, progress=False)
-    
-    if dados.empty:
-        return pd.DataFrame(), 0.0
-
-    if isinstance(dados.columns, pd.MultiIndex):
-        dados.columns = dados.columns.get_level_values(0)
-
-    dados = dados.reset_index()
-    dados.columns = dados.columns.str.lower()
-    
-    mapa_colunas = {
-        "date": "data", "datetime": "data",
-        "open": "abertura", "high": "maxima",
-        "low": "minima", "close": "fechamento", "volume": "volume"
-    }
-    dados = dados.rename(columns=mapa_colunas)
-    
-    dados['data'] = pd.to_datetime(dados['data']).dt.tz_localize(None)
-    
-    colunas_finais = ['data', 'abertura', 'maxima', 'minima', 'fechamento', 'volume']
-    dados = dados[colunas_finais]
-    
-    tempo_total = time.time() - inicio
-    return dados, tempo_total
-
-def processar_indicadores(df):
-    inicio_calc = time.time()
-    df = df.copy()
-    
-    df['SMA_20'] = df['fechamento'].rolling(window=20).mean()
-    df['SMA_50'] = df['fechamento'].rolling(window=50).mean()
-    
-    std = df['fechamento'].rolling(window=20).std()
-    df['Bollinger_Upper'] = df['SMA_20'] + (std * 2)
-    df['Bollinger_Lower'] = df['SMA_20'] - (std * 2)
-    
-    delta = df['fechamento'].diff()
-    gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
-    loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
-    rs = gain / loss
-    df['RSI'] = 100 - (100 / (1 + rs))
-    
-    df['Retorno_Diario'] = df['fechamento'].pct_change()
-    df['Volatilidade_Anual'] = df['Retorno_Diario'].rolling(window=21).std() * (252**0.5) * 100
-    
-    tempo_calc = time.time() - inicio_calc
-    return df, tempo_calc
-
-def criar_grafico_avancado(df, ticker):
-    fig = make_subplots(
-        rows=2, cols=1, 
-        shared_xaxes=True, 
-        vertical_spacing=0.05, 
-        row_heights=[0.7, 0.3],
-        subplot_titles=(f"Preço e Bandas de Bollinger - {ticker}", "RSI (Índice de Força Relativa)")
-    )
-
-    fig.add_trace(go.Candlestick(
-        x=df['data'], open=df['abertura'], high=df['maxima'],
-        low=df['minima'], close=df['fechamento'], name='Preço'
-    ), row=1, col=1)
-
-    fig.add_trace(go.Scatter(
-        x=df['data'], y=df['Bollinger_Upper'], 
-        line=dict(color='rgba(173, 216, 230, 0.5)', width=1), name='Bollinger Sup'
-    ), row=1, col=1)
-    
-    fig.add_trace(go.Scatter(
-        x=df['data'], y=df['Bollinger_Lower'], 
-        line=dict(color='rgba(173, 216, 230, 0.5)', width=1), 
-        fill='tonexty', fillcolor='rgba(173, 216, 230, 0.1)', name='Bollinger Inf'
-    ), row=1, col=1)
-
-    fig.add_trace(go.Scatter(
-        x=df['data'], y=df['SMA_20'], 
-        line=dict(color='orange', width=1.5), name='Média 20d'
-    ), row=1, col=1)
-
-    fig.add_trace(go.Scatter(
-        x=df['data'], y=df['RSI'], 
-        line=dict(color='purple', width=2), name='RSI'
-    ), row=2, col=1)
-
-    fig.add_shape(type="line", x0=df['data'].iloc[0], x1=df['data'].iloc[-1], y0=70, y1=70,
-                  line=dict(color="red", width=1, dash="dot"), row=2, col=1)
-    fig.add_shape(type="line", x0=df['data'].iloc[0], x1=df['data'].iloc[-1], y0=30, y1=30,
-                  line=dict(color="green", width=1, dash="dot"), row=2, col=1)
-
-    fig.update_layout(
-        height=800,
-        xaxis_rangeslider_visible=False,
-        hovermode="x unified",
-        margin=dict(l=10, r=10, t=30, b=10),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-    )
-    
-    fig.update_yaxes(title_text="Preço", row=1, col=1)
-    fig.update_yaxes(title_text="RSI (0-100)", range=[0, 100], row=2, col=1)
-    
-    return fig
+    return baixar_cotacoes(ticker, data_inicio, data_fim)
 
 st.title("📈 Dashboard de Análise Quantitativa")
 st.caption("Projeto educacional. Não é recomendação de investimento. Dados: Yahoo Finance (yfinance, não oficial).")
