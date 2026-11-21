@@ -26,6 +26,9 @@ TICKER_MAP = {
     "NVDA": "Nvidia"
 }
 
+def moeda_do_ticker(ticker):
+    return "R$" if ticker.upper().endswith(".SA") else "US$"
+
 @st.cache_data(ttl=3600)
 def carregar_dados_api(ticker, data_inicio, data_fim):
     inicio = time.time()
@@ -158,6 +161,10 @@ if not df_raw.empty:
     st.sidebar.metric("Cálculo (CPU)", f"{tempo_calc:.4f} s")
     st.sidebar.caption(f"Processou {linhas_proc} registros a {velocidade:,.0f} reg/s")
 
+    if len(df_analise) < 2:
+        st.warning("Escolha um período com pelo menos 2 pregões.")
+        st.stop()
+
     col1, col2, col3, col4 = st.columns(4)
     ultimo = df_analise.iloc[-1]
     penultimo = df_analise.iloc[-2]
@@ -165,7 +172,7 @@ if not df_raw.empty:
     var_preco = ultimo['fechamento'] - penultimo['fechamento']
     var_pct = (var_preco / penultimo['fechamento']) * 100
     
-    col1.metric("Preço Atual", f"R$ {ultimo['fechamento']:.2f}", f"{var_pct:.2f}%")
+    col1.metric("Preço Atual", f"{moeda_do_ticker(ticker_selecionado)} {ultimo['fechamento']:.2f}", f"{var_pct:.2f}%")
     col2.metric("RSI (14d)", f"{ultimo['RSI']:.1f}", delta=None)
     col3.metric("Volatilidade Anual", f"{ultimo['Volatilidade_Anual']:.1f}%")
     
