@@ -1,6 +1,8 @@
 # 📈 Dashboard de Análise Quantitativa de Ações
 
-> Pipeline ETL automatizado + Dashboard interativo para análise técnica de ações em tempo real.
+> Dashboard interativo de análise técnica que baixa cotações sob demanda do Yahoo Finance, com cache de 1 h. Em evolução para um pipeline de dados de verdade (v2).
+
+> ⚠️ **Projeto educacional. Não é recomendação de investimento.** Dados do Yahoo Finance via `yfinance` (não oficial).
 
 ### 🔴 Live Demo
 **[https://stockdatapipeline-jnuaqfhrnt8jts3ymssrsp.streamlit.app/](https://stockdatapipeline-jnuaqfhrnt8jts3ymssrsp.streamlit.app/)**
@@ -11,12 +13,7 @@
 
 ## ⚡ Performance
 
-| Métrica | Resultado |
-|---|---|
-| Download + processamento de dados | **0,81 segundos** |
-| Velocidade de cálculo (CPU) | **76.472 registros/segundo** |
-| Tempo de cálculo dos indicadores | **0,0033 segundos** |
-| Cache inteligente (TTL) | **3.600 segundos** |
+Os números de performance publicados antes foram retirados por não serem reproduzíveis. Eles estão sendo re-medidos com método documentado: veja [ADR-001](docs/adr/ADR-001-stack.md) e os scripts/saídas em [docs/fase0/](docs/fase0/).
 
 ---
 
@@ -32,7 +29,7 @@
 
 ## 📋 Sobre o Projeto
 
-Dashboard de análise técnica de ações construído com Streamlit e hospedado na Streamlit Community Cloud. Busca dados ao vivo via API do Yahoo Finance (`yfinance`), calcula indicadores técnicos em tempo real com NumPy/Pandas e exibe visualizações interativas com Plotly.
+Dashboard de análise técnica de ações construído com Streamlit e hospedado na Streamlit Community Cloud. Baixa cotações sob demanda do Yahoo Finance (`yfinance`, não oficial) com cache de 1 h, calcula indicadores técnicos com NumPy/Pandas e exibe visualizações interativas com Plotly.
 
 ---
 
@@ -40,7 +37,7 @@ Dashboard de análise técnica de ações construído com Streamlit e hospedado 
 
 - **Filtros dinâmicos** por ticker (PETR4, VALE3, AAPL, NVDA e outros) e período personalizado
 - **Gráfico de Candlestick** interativo com Plotly (abertura, máxima, mínima, fechamento)
-- **Indicadores técnicos calculados em tempo real:**
+- **Indicadores técnicos:**
   - Médias Móveis Simples (SMA 20 e SMA 50)
   - Bandas de Bollinger (±2 desvios padrão, janela 20)
   - RSI — Índice de Força Relativa (janela 14)
@@ -55,7 +52,7 @@ Dashboard de análise técnica de ações construído com Streamlit e hospedado 
 ## 🏗️ Arquitetura
 
 ```
-yfinance API (ao vivo)
+yfinance (sob demanda)
        │
        ▼
   @st.cache_data (TTL 3600s)
@@ -71,6 +68,18 @@ yfinance API (ao vivo)
        ▼
   Visualização Plotly → Streamlit Cloud
 ```
+
+---
+
+## 🗺️ Roadmap v2
+
+- Camadas bronze/silver/gold com carga incremental
+- Transformações com dbt-duckdb
+- Ingestão diária via GitHub Actions
+- Testes + CI
+- Alerta de qualidade de dados
+
+Detalhes e justificativas no [ADR-001](docs/adr/ADR-001-stack.md).
 
 ---
 

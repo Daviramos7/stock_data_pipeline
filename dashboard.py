@@ -134,6 +134,7 @@ def criar_grafico_avancado(df, ticker):
     return fig
 
 st.title("📈 Dashboard de Análise Quantitativa")
+st.caption("Projeto educacional. Não é recomendação de investimento. Dados: Yahoo Finance (yfinance, não oficial).")
 
 st.sidebar.header("Configurações")
 ticker_selecionado = st.sidebar.selectbox("Ativo:", options=TICKER_MAP.keys(), format_func=lambda t: f"{t} - {TICKER_MAP[t]}")
