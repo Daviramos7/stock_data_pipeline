@@ -159,3 +159,21 @@ def test_linhas_silver_lidas_do_arquivo_quando_a_ingestao_cai_antes(tmp_path):
     pd.DataFrame({"x": range(7)}).to_parquet(caminho_silver(tmp_path))
     r = rodar(tmp_path, ingestao=falha)
     assert r["status"] == "falha" and r["linhas_silver"] == 7
+
+
+def test_cli_simular_falha_cai_na_ingestao_sem_publicar(tmp_path, monkeypatch):
+    import stock_pipeline.pipeline.orquestrar as mod
+
+    def nao_pode(ctx):
+        raise AssertionError("com --simular-falha o dbt/export não podem rodar")
+
+    monkeypatch.setattr(mod, "dbt_padrao", nao_pode)
+    monkeypatch.setattr(mod, "export_padrao", nao_pode)
+    monkeypatch.setattr(mod.orquestrar, "__kwdefaults__",
+                        {**mod.orquestrar.__kwdefaults__, "dbt": nao_pode, "export": nao_pode})
+    argv = ["--data-dir", str(tmp_path), "orquestrar", "--modo", "diario", "--simular-falha"]
+    assert cli.main(argv) == 1
+    gravado = json.loads(caminho_last_run(tmp_path).read_text(encoding="utf-8"))
+    assert gravado["status"] == "falha" and gravado["etapa_falhou"] == "ingestao"
+    assert "simulada" in gravado["erro"]
+    assert not caminho_publicar(tmp_path).exists()

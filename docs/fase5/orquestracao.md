@@ -21,8 +21,11 @@ workflow_dispatch ──────┴─> job `pipeline` (ubuntu-latest, timeo
    │     4. data/last_run.json (sempre)   +   data/PUBLICAR (só se 1–3 deram certo)           │
    │                                                                                           │
    ├─ [só com sucesso e na main] publicar na Release:                                exit 1 ◄─┘
-   │     por asset: apaga X.anterior → renomeia X para X.anterior → sobe o X novo
+   │     1) sobe todos como X.novo (falhou? os assets atuais ficam intactos)
+   │     2) por asset: apaga X.anterior → renomeia X para X.anterior → renomeia X.novo para X
    │     (bronze.tar.gz, silver.parquet, fato_cotacao_diaria / dim_ativo / dim_calendario .parquet, last_run.json)
+   │
+   ├─ [sempre, na main] alertas → Issues no GitHub (Fase 6: docs/fase6/alertas.md)
    │
    └─ [sempre, na main] commit de status/last_run.json:  "chore(pipeline): run <data> <status> [skip ci]"
 ```
@@ -84,8 +87,10 @@ gh release upload data-latest * --clobber     # os .anterior continuam lá
 
 Limitações:
 - É **um** nível só. Dois runs ruins seguidos apagam o estado bom.
-- O asset fica fora do ar por alguns segundos entre o rename e o upload (a troca é feita asset a asset).
-- Se o job morrer no meio da publicação, a Release pode ficar com alguns assets novos e outros
+- Desde a Fase 6 o upload é feito antes da troca (`X.novo`), então falha de upload não mexe no
+  que está publicado. A troca em si (3 chamadas de API por asset, só renames e um delete) ainda é
+  asset a asset: entre os dois renames o `X` fica fora do ar por uma fração de segundo.
+- Se o job morrer bem no meio da troca, a Release pode ficar com alguns assets novos e outros
   já renomeados para `.anterior`. Se faltar `bronze.tar.gz` ou `silver.parquet`, o run seguinte cai
   no caminho de 1ª execução (backfill desde 2015). Isso reconstrói tudo, só fica mais lento.
 

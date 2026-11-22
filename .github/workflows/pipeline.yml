@@ -2,7 +2,7 @@
 #
 # Estado entre execuções: o runner é descartável, então o bronze/silver de ontem vem da
 # própria Release (`bronze.tar.gz`, `silver.parquet`) e o resultado volta pra lá.
-# Detalhes, rollback e custo: docs/fase5/orquestracao.md.
+# Detalhes, rollback e custo: docs/fase5/orquestracao.md. Alertas por Issue: docs/fase6/alertas.md.
 name: pipeline
 
 on:
@@ -26,6 +26,10 @@ on:
         description: "backfill: último dia, inclusivo, AAAA-MM-DD (vazio = ontem)"
         type: string
         default: ""
+      simular_falha:
+        description: "teste do alerta: a ingestão falha de propósito (abre a Issue de erro, job vermelho)"
+        type: boolean
+        default: false
 
 concurrency:
   group: pipeline
@@ -33,6 +37,7 @@ concurrency:
 
 permissions:
   contents: write
+  issues: write   # Fase 6: alertas viram Issues (só com o GITHUB_TOKEN)
 
 jobs:
   pipeline:
@@ -45,6 +50,8 @@ jobs:
       MODO: ${{ inputs.modo || 'diario' }}
       INICIO: ${{ inputs.inicio }}
       FIM: ${{ inputs.fim }}
+      # Só vale no disparo manual; no agendado `inputs` vem vazio e isto fica false.
+      SIMULAR_FALHA: ${{ github.event_name == 'workflow_dispatch' && inputs.simular_falha || false }}
     steps:
       - uses: actions/checkout@v4
 
@@ -86,6 +93,7 @@ jobs:
           args=(--data-dir data orquestrar --modo "$MODO")
           [ -n "$INICIO" ] && args+=(--inicio "$INICIO")
           [ -n "$FIM" ] && args+=(--fim "$FIM")
+          [ "$SIMULAR_FALHA" = "true" ] && args+=(--simular-falha)
           echo "python -m stock_pipeline.pipeline.cli ${args[*]}"
           python -m stock_pipeline.pipeline.cli "${args[@]}"
 
@@ -108,19 +116,52 @@ jobs:
               --notes "Gerado pelo workflow pipeline.yml. Estado (bronze/silver) e gold do último run com sucesso; *.anterior = run anterior (1 nível de rollback)."
           fi
 
-          # Asset a asset: apaga o .anterior velho, renomeia o atual pra .anterior, sobe o novo.
-          # (Rename pela API: sem baixar e sem subir de novo o que já está lá.)
+          # Publicação em duas fases (rename pela API: nada é baixado nem subido de novo à toa).
+          # 1) Sobe TODOS os arquivos novos como <nome>.novo. Se algum upload falhar, o job para
+          #    aqui e os assets atuais e .anterior continuam intactos (sobra no máximo um .novo,
+          #    que o próximo run sobrescreve com --clobber).
+          # 2) Só então, por arquivo: apaga o .anterior velho -> atual vira .anterior -> .novo vira atual.
           api="repos/$GITHUB_REPOSITORY/releases"
           release_id=$(gh api "$api/tags/$TAG" --jq '.id')
+          mkdir -p _novo
           for arquivo in _publicar/*; do
             nome=$(basename "$arquivo")
-            gh api "$api/$release_id/assets" --paginate --jq '.[] | "\(.id) \(.name)"' > _assets.txt
+            cp "$arquivo" "_novo/$nome.novo"
+            gh release upload "$TAG" "_novo/$nome.novo" --clobber
+          done
+
+          gh api "$api/$release_id/assets" --paginate --jq '.[] | "\(.id) \(.name)"' > _assets.txt
+          for arquivo in _publicar/*; do
+            nome=$(basename "$arquivo")
+            id_novo=$(awk -v n="$nome.novo" '$2 == n {print $1}' _assets.txt)
             id_anterior=$(awk -v n="$nome.anterior" '$2 == n {print $1}' _assets.txt)
             id_atual=$(awk -v n="$nome" '$2 == n {print $1}' _assets.txt)
+            if [ -z "$id_novo" ]; then
+              echo "::error::$nome.novo não apareceu na Release depois do upload"; exit 1
+            fi
             [ -n "$id_anterior" ] && gh api -X DELETE "$api/assets/$id_anterior"
             [ -n "$id_atual" ] && gh api -X PATCH "$api/assets/$id_atual" -f name="$nome.anterior" > /dev/null
-            gh release upload "$TAG" "$arquivo" --clobber
+            gh api -X PATCH "$api/assets/$id_novo" -f name="$nome" > /dev/null
           done
+
+      # Fase 6: um alerta por PROBLEMA, com dedup, anti-spam e fechamento automático.
+      # Roda mesmo com o Orquestrar vermelho (é aí que mais importa) e nunca derruba o job
+      # por si: o vermelho continua vindo do Orquestrar. Ciclo de vida: docs/fase6/alertas.md.
+      - name: Alertas
+        if: always() && github.ref == 'refs/heads/main'
+        continue-on-error: true
+        run: |
+          python -m stock_pipeline.pipeline.cli --data-dir data alertas --saida data/alertas.json             || echo "::warning::coletor de alertas falhou"
+          while IFS='|' read -r nome cor descricao; do
+            gh label create "$nome" --color "$cor" --description "$descricao" --force > /dev/null               || echo "::warning::não consegui garantir o rótulo $nome"
+          done <<'ROTULOS'
+          alerta-pipeline|5319e7|Aberta e fechada pelo workflow pipeline.yml
+          alerta:erro|d73a4a|Alerta do pipeline: erro (dado não publicado ou incorreto)
+          alerta:aviso|fbca04|Alerta do pipeline: aviso (olhar e triar)
+          ROTULOS
+          if [ -f data/alertas.json ]; then
+            python scripts/publicar_alertas.py --alertas data/alertas.json
+          fi
 
       - name: Commitar status/last_run.json na main
         if: always() && github.ref == 'refs/heads/main'

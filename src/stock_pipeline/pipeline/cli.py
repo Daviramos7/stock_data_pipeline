@@ -3,6 +3,11 @@
     python -m stock_pipeline.pipeline.cli diario
     python -m stock_pipeline.pipeline.cli backfill --inicio 2015-01-01 --fim 2026-11-21
     python -m stock_pipeline.pipeline.cli orquestrar --modo diario|backfill [--inicio --fim]
+    python -m stock_pipeline.pipeline.cli alertas --saida data/alertas.json
+
+`orquestrar --simular-falha` faz a ingestão falhar de propósito (teste do alerta da Fase 6).
+`alertas` (Fase 6) lê last_run.json + run_results.json do dbt e grava a lista de alertas;
+ver alertas.py.
 
 `orquestrar` (Fase 5) encadeia ingestão, dbt build e export do gold; ver orquestrar.py.
 
@@ -101,13 +106,35 @@ def main(argv=None) -> int:
     orq.add_argument("--modo", choices=["diario", "backfill"], default="diario")
     orq.add_argument("--inicio", type=_data, help="backfill: padrão 2015-01-01")
     orq.add_argument("--fim", type=_data, help="backfill: último dia, inclusivo (padrão ontem)")
+    orq.add_argument("--simular-falha", action="store_true",
+                     help="a ingestão falha de propósito (testar o alerta); nada é baixado")
+    al = sub.add_parser("alertas", help="last_run.json + run_results.json do dbt -> alertas.json")
+    al.add_argument("--saida", type=Path, required=True)
+    al.add_argument("--last-run", type=Path, help="padrão: <data-dir>/last_run.json")
+    al.add_argument("--run-results", type=Path,
+                    help="padrão: <data-dir>/_dbt/target/run_results.json (onde o orquestrador grava)")
+    al.add_argument("--warehouse", type=Path, help="padrão: <data-dir>/warehouse.duckdb")
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
-    if args.comando == "orquestrar":
-        from .orquestrar import orquestrar
+    if args.comando == "alertas":
+        from .alertas import gerar
 
-        resultado = orquestrar(args.data_dir, modo=args.modo, inicio=args.inicio, fim=args.fim)
+        resultado = gerar(
+            last_run=args.last_run or args.data_dir / "last_run.json",
+            run_results=args.run_results or args.data_dir / "_dbt" / "target" / "run_results.json",
+            warehouse=args.warehouse or args.data_dir / "warehouse.duckdb",
+            saida=args.saida)
+        for a in resultado["alertas"]:
+            print(f"[{a['severidade']}] {a['chave']}: {a['titulo']}")
+        print(f"{len(resultado['alertas'])} alerta(s) em {args.saida}; escopo {resultado['escopo']}")
+        return 0  # gerar alerta não é falha: quem decide o vermelho é o orquestrador
+    if args.comando == "orquestrar":
+        from .orquestrar import orquestrar, simular_falha_ingestao
+
+        extra = {"ingestao": simular_falha_ingestao} if args.simular_falha else {}
+        resultado = orquestrar(args.data_dir, modo=args.modo, inicio=args.inicio, fim=args.fim,
+                               **extra)
         print(json.dumps(resultado, ensure_ascii=False, indent=2))
         return 0 if resultado["status"] == "ok" else 1
     hoje = date.today()

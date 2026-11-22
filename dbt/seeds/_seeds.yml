@@ -50,3 +50,25 @@ seeds:
         data_tests:
           - relationships:
               arguments: {to: ref('dim_ativo'), field: bolsa}
+
+  - name: eventos_conhecidos
+    description: >
+      Saltos de preço triados à mão e confirmados com fonte (fato relevante, notícia, RI).
+      O teste salto_sem_evento ignora (ticker, data) listados aqui. Começa vazio: a triagem
+      é feita a partir da Issue de alerta (docs/fase6/alertas.md).
+    data_tests:
+      - unique_combinacao:
+          arguments: {colunas: ["ticker", "data"]}
+    columns:
+      - name: ticker
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_ativo'), field: ticker}
+      - name: data
+        data_tests: [not_null]
+      - name: tipo
+        data_tests: [not_null]
+      - name: fonte_url
+        description: "Link da fonte que confirma o evento. Sem fonte, não entra."
+        data_tests: [not_null]

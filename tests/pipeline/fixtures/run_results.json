@@ -1,0 +1,16 @@
+{
+  "metadata": {"dbt_version": "1.12.7", "generated_at": "2026-11-23T09:25:00.000000Z"},
+  "results": [
+    {"unique_id": "model.stock_gold.fato_cotacao_diaria", "status": "success", "failures": null,
+     "message": "OK", "compiled_code": "select 1"},
+    {"unique_id": "test.stock_gold.not_null_fato_cotacao_diaria_ticker.5f6e7d8c9b", "status": "pass",
+     "failures": 0, "message": null, "compiled_code": "select 1 where false"},
+    {"unique_id": "test.stock_gold.salto_sem_evento", "status": "warn", "failures": 2,
+     "message": "Got 2 results, configured to warn if != 0",
+     "compiled_code": "-- salto\nselect * from fato -- comentario no fim"},
+    {"unique_id": "test.stock_gold.volume_zero_em_pregao", "status": "warn", "failures": 25,
+     "message": "Got 25 results, configured to warn if != 0", "compiled_code": "select volume"},
+    {"unique_id": "test.stock_gold.fato_desatualizado", "status": "fail", "failures": 1,
+     "message": "Got 1 result, configured to fail if != 0", "compiled_code": "select fresh"}
+  ]
+}

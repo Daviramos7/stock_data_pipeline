@@ -97,6 +97,11 @@ def ingestao_padrao(ctx: Contexto) -> None:
                          f"rebaixa: {sorted(execucao['falhas_rebaixa'])}")
 
 
+def simular_falha_ingestao(ctx: Contexto) -> None:
+    """`orquestrar --simular-falha` (workflow_dispatch simular_falha=true): testa o alerta."""
+    raise FalhaEtapa("falha simulada de propósito (simular_falha=true); nada foi baixado")
+
+
 def _executavel_dbt() -> str:
     nome = "dbt.exe" if os.name == "nt" else "dbt"
     vizinho = Path(sys.executable).with_name(nome)  # o dbt do mesmo venv
