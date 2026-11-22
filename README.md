@@ -1,124 +1,106 @@
-# 📈 Dashboard de Análise Quantitativa de Ações
+# 📈 stock_data_pipeline
 
-![CI](https://github.com/Daviramos7/stock_data_pipeline/actions/workflows/ci.yml/badge.svg)
-![pipeline](https://github.com/Daviramos7/stock_data_pipeline/actions/workflows/pipeline.yml/badge.svg)
+Pipeline diário de cotações da B3 e dos EUA com camadas bronze/silver/gold, dbt, orquestração no GitHub Actions e alertas por Issue; o dashboard em Streamlit lê do gold.
 
-Pipeline diário: GitHub Actions, seg–sáb 06:17 BRT; último run em [`status/last_run.json`](status/last_run.json).
+[![CI](https://github.com/Daviramos7/stock_data_pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/Daviramos7/stock_data_pipeline/actions/workflows/ci.yml)
+[![pipeline](https://github.com/Daviramos7/stock_data_pipeline/actions/workflows/pipeline.yml/badge.svg)](https://github.com/Daviramos7/stock_data_pipeline/actions/workflows/pipeline.yml)
 
-> Dashboard interativo de análise técnica que baixa cotações sob demanda do Yahoo Finance, com cache de 1 h. Em evolução para um pipeline de dados de verdade (v2).
+**App:** [stockdatapipeline-jnuaqfhrnt8jts3ymssrsp.streamlit.app](https://stockdatapipeline-jnuaqfhrnt8jts3ymssrsp.streamlit.app/) · último run: [`status/last_run.json`](status/last_run.json)
 
 > ⚠️ **Projeto educacional. Não é recomendação de investimento.** Dados do Yahoo Finance via `yfinance` (não oficial).
 
-### 🔴 Live Demo
-**[https://stockdatapipeline-jnuaqfhrnt8jts3ymssrsp.streamlit.app/](https://stockdatapipeline-jnuaqfhrnt8jts3ymssrsp.streamlit.app/)**
+## Como funciona
 
-![Prévia do Dashboard](./img/preview.jpg)
-
----
-
-## ⚡ Performance
-
-Os números de performance publicados antes foram retirados por não serem reproduzíveis. Eles estão sendo re-medidos com método documentado: veja [ADR-001](docs/adr/ADR-001-stack.md) e os scripts/saídas em [docs/fase0/](docs/fase0/).
-
----
-
-## 🛠️ Stack
-
-![Python](https://img.shields.io/badge/Python-3.13-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
-![Plotly](https://img.shields.io/badge/Plotly-3F4F75?style=for-the-badge&logo=plotly&logoColor=white)
-![Pandas](https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=pandas&logoColor=white)
-![NumPy](https://img.shields.io/badge/NumPy-013243?style=for-the-badge&logo=numpy&logoColor=white)
-
----
-
-## 📋 Sobre o Projeto
-
-Dashboard de análise técnica de ações construído com Streamlit e hospedado na Streamlit Community Cloud. Baixa cotações sob demanda do Yahoo Finance (`yfinance`, não oficial) com cache de 1 h, calcula indicadores técnicos com NumPy/Pandas e exibe visualizações interativas com Plotly.
-
----
-
-## ✨ Funcionalidades
-
-- **Filtros dinâmicos** por ticker (PETR4, VALE3, AAPL, NVDA e outros) e período personalizado
-- **Gráfico de Candlestick** interativo com Plotly (abertura, máxima, mínima, fechamento)
-- **Indicadores técnicos:**
-  - Médias Móveis Simples (SMA 20 e SMA 50)
-  - Bandas de Bollinger (±2 desvios padrão, janela 20)
-  - RSI de Wilder (14) — Índice de Força Relativa
-  - Volatilidade Anual (janela 21, anualizada por √252)
-  - Retorno Diário percentual
-- **KPIs em destaque:** preço atual, variação %, RSI, volatilidade e tendência vs SMA 20
-- **Cache inteligente** com `@st.cache_data` — chamadas repetidas não rebatem a API
-- **Aba de dados brutos** com tabela completa ordenável
-
----
-
-## 🏗️ Arquitetura
-
-```
-yfinance (sob demanda)
-       │
-       ▼
-  @st.cache_data (TTL 3600s)
-       │
-       ▼
-  Transformação com Pandas
-  (normalização, renomeação, datas)
-       │
-       ▼
-  Cálculo de Indicadores (NumPy/Pandas)
-  SMA · Bollinger · RSI · Volatilidade
-       │
-       ▼
-  Visualização Plotly → Streamlit Cloud
+```mermaid
+flowchart LR
+    Y[yfinance] --> GA["GitHub Actions<br/>cron seg–sáb 06:17 BRT"]
+    GA --> B["bronze<br/>bruto + proventos/splits"]
+    B --> S["silver<br/>Parquet, merge por ticker×data"]
+    S --> D["dbt-duckdb<br/>gold + testes"]
+    D --> R["Release data-latest<br/>Parquet + last_run.json"]
+    R --> ST["Streamlit<br/>lê o gold com cache de 30 min"]
+    D -- "teste dbt falhou / warn" --> AL[alertas]
+    GA -- "etapa falhou" --> AL
+    AL --> GI[GitHub Issues]
 ```
 
----
+Se o gold estiver inacessível, o app avisa e cai para o modo antigo (yfinance ao vivo), sem sair do ar.
 
-## 🗺️ Roadmap v2
+## Prints
 
-- Camadas bronze/silver/gold com carga incremental
-- Transformações com dbt-duckdb
-- Ingestão diária via GitHub Actions
-- Testes + CI
-- Alerta de qualidade de dados
+| Dashboard lendo do gold (PETR4) | Alerta automático (Issue) |
+| --- | --- |
+| ![Dashboard lendo do gold](img/app-gold.png) | ![Issue de alerta do pipeline](img/issue-alerta.png) |
 
-Detalhes e justificativas no [ADR-001](docs/adr/ADR-001-stack.md).
+## Números medidos
 
-### Qualidade e alertas
+Cada número tem origem e data; nada aqui é estimado.
 
-Todo run diário roda os testes do dbt sobre o gold: chave única, preço positivo, pregão faltando, linha em dia sem pregão, freshness por bolsa (erro), e salto de preço e volume 0 em pregão (aviso).
-Cada problema vira **uma** Issue no GitHub (rótulo `alerta-pipeline`), com exemplos, link do run e o que fazer. Ela recebe comentário só quando o conteúdo muda (ou a cada 7 dias) e fecha sozinha quando o problema some.
-Salto explicado (grupamento, fato relevante) entra em `dbt/seeds/eventos_conhecidos.csv`, sempre com link da fonte. Detalhes em [docs/fase6/alertas.md](docs/fase6/alertas.md).
+| O quê | Valor | Origem (data) |
+| --- | ---: | --- |
+| Linhas no silver | 29 708 | [`status/last_run.json`](status/last_run.json) (run de 22/11/2026) |
+| Linhas em `fato_cotacao_diaria` | 29 654 | idem |
+| Tickers | 10 (6 B3 + 4 EUA), desde 2015-01-02 | idem; [ADR-001](docs/adr/ADR-001-stack.md) |
+| Tempo do pipeline no runner (ingestão + dbt + export) | 8,67 s (2,12 + 6,48 + 0,07) | `duracao_s` em [`status/last_run.json`](status/last_run.json) (22/11/2026) |
+| `dbt build` | 44 PASS, 1 WARN, 0 ERROR | idem |
+| Testes Python (`pytest -q`) | 111 passando | rodado localmente em 22/11/2026 |
+| Abrir o app, cache vazio (mediana de 5) | 1,62 s (antigo: 0,74 s) | [`docs/fase7/medicoes.md`](docs/fase7/medicoes.md) (22/11/2026) |
+| Abrir o app, gold em cache (mediana de 5) | 0,04 s | idem |
+| Gold baixado pelo app (`fato_cotacao_diaria.parquet`) | 2,8 MB | idem |
+| KPIs do último pregão, app novo × antigo | preço e SMA20 iguais; RSI difere ~1e-7 | idem; [`docs/fase4/comparacao_app_gold.md`](docs/fase4/comparacao_app_gold.md) |
 
----
+O app novo é mais lento no primeiro acesso (baixa o histórico inteiro) e muito mais rápido depois; a explicação está em [`docs/fase7/medicoes.md`](docs/fase7/medicoes.md).
 
-## 🚀 Executar Localmente
+## Decisões e histórias técnicas
+
+- **GitHub Actions × Airflow**: 1 execução por dia não justifica um host 24/7; cron + `workflow_dispatch` para backfill. [ADR-001](docs/adr/ADR-001-stack.md), [orquestração](docs/fase5/orquestracao.md)
+- **Estado na Release**: bronze, silver e gold vivem como assets da Release `data-latest`, trocados com upload `.novo` e só então renomeados; o `last_run.json` é commitado como prova do run. [orquestração](docs/fase5/orquestracao.md)
+- **Bronze bruto + ajuste depois**: o bronze guarda preço sem ajuste, proventos e splits; o ajustado é calculado no silver/gold e provento novo rebaixa o histórico do ticker. [ADR-001](docs/adr/ADR-001-stack.md)
+- **Yahoo × calendário**: 54 linhas-fantasma da B3 (feriados de 2017/2018 com volume 0) descartadas por seed, e 20/11/2020, que teve pregão mas o Yahoo não tem. [calendário](docs/fase4/calendario.md)
+- **RSI de Wilder e ddof do Bollinger**: o RSI passou de média simples para Wilder (alpha = 1/14); o Bollinger usa desvio amostral (ddof=1) de propósito, conferido contra a lib `ta`. [CHANGELOG](CHANGELOG.md), [`tests/test_indicadores_referencia.py`](tests/test_indicadores_referencia.py)
+- **Alerta real**: a Issue #8 apontou 8 saltos de preço; a triagem com fonte confirmou 5 como eventos reais (viraram seed) e sobraram 3 sem fonte. [alertas](docs/fase6/alertas.md), [`eventos_conhecidos.csv`](dbt/seeds/eventos_conhecidos.csv)
+
+## Como rodar local
+
+App (o mesmo `requirements.txt` do Streamlit Cloud):
 
 ```bash
-# Clone o repositório
-git clone https://github.com/Daviramos7/stock_data_pipeline
-cd stock_data_pipeline
-
-# Crie e ative o ambiente virtual
-python -m venv venv
-.\venv\Scripts\activate  # Windows
-source venv/bin/activate  # Linux/Mac
-
-# Instale as dependências
 pip install -r requirements.txt
-
-# Execute o dashboard
 streamlit run dashboard.py
+# opcional: ler outro gold (URL ou pasta local)
+GOLD_BASE_URL=data/gold streamlit run dashboard.py
 ```
 
----
+Pipeline e dbt:
 
-## 📄 Licença
+```bash
+pip install -r requirements-pipeline.txt -r requirements-dev.txt
+pip install -e .
+python -m stock_pipeline.pipeline.cli --data-dir data orquestrar --modo diario
+python -m pytest -q
+```
 
-Copyright © 2026 por Davi Ramos Ferreira. Todos os Direitos Reservados.
+Para rodar o dbt sem rede, sobre um silver sintético, siga o job `dbt` de [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (`scripts/gerar_silver_amostra.py` → `dbt build` → `scripts/exportar_gold.py`).
 
----
+## Estrutura do repo
 
-**Desenvolvido com 💙 por [Davi Ramos Ferreira](https://github.com/Daviramos7)**
+```
+dashboard.py              app Streamlit (lê o gold; fallback yfinance)
+src/stock_pipeline/       indicadores, gráficos, leitura do gold
+src/stock_pipeline/pipeline/  bronze, silver, orquestração, alertas
+dbt/                      modelos staging → intermediate → gold, seeds e testes
+scripts/                  export do gold, alertas, amostra sintética
+tests/                    pytest (inclui o app via streamlit AppTest)
+docs/                     ADR e medições de cada fase
+status/last_run.json      resultado do último run (commitado pelo bot)
+```
+
+## Limitações
+
+- `yfinance` não é API oficial: pode mudar ou falhar sem aviso (se uma etapa do pipeline cair, ele abre Issue).
+- Dados até o último pregão fechado; não é tempo real nem intraday.
+- O horário do cron do GitHub não é garantido: o run pode atrasar.
+
+## Licença
+
+Copyright © 2026 por Davi Ramos Ferreira. Todos os direitos reservados.
