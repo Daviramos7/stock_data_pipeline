@@ -1,6 +1,6 @@
 {
-  "iniciado_em_utc": "2026-11-22T18:09:55+00:00",
-  "iniciado_em_brt": "2026-11-22T15:09:55-03:00",
+  "iniciado_em_utc": "2026-11-22T18:16:59+00:00",
+  "iniciado_em_brt": "2026-11-22T15:16:59-03:00",
   "modo": "diario",
   "inicio": "2026-11-15",
   "fim_exclusivo": "2026-11-22",
@@ -29,13 +29,13 @@
     "skip": 0
   },
   "duracao_s": {
-    "ingestao": 1.237,
-    "dbt": 4.882,
-    "export": 0.067,
-    "total": 6.187
+    "ingestao": 2.12,
+    "dbt": 6.48,
+    "export": 0.073,
+    "total": 8.674
   },
-  "commit_sha": "9885618299eeb1371f332fc72319ce53f4b3004d",
-  "run_url": "https://github.com/Daviramos7/stock_data_pipeline/actions/runs/45053406861",
+  "commit_sha": "6e8f677f40d1cdafb9356598cab446418668dc77",
+  "run_url": "https://github.com/Daviramos7/stock_data_pipeline/actions/runs/45054106280",
   "falhas_rebaixa": {},
   "linhas_gold": {
     "fato_cotacao_diaria": 29654,
