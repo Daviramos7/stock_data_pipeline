@@ -20,6 +20,10 @@ vars:
   silver_path: "{{ env_var('SILVER_PATH', '../data/silver/cotacoes.parquet') }}"
   # Salto diário de adj_close acima disto, sem provento/split no dia, gera warn.
   limiar_salto: 0.25
+  # Teste volume_zero_em_pregao: só os últimos N pregões de cada bolsa até var('hoje').
+  janela_volume_zero: 10
+  # hoje: data de referência do teste fato_desatualizado. Sem definir aqui de propósito:
+  # o default (data atual) fica no próprio teste; passe com --vars "{hoje: 'AAAA-MM-DD'}".
 
 seeds:
   stock_gold:
@@ -42,6 +46,13 @@ seeds:
         data: date
         tipo: varchar
         motivo: varchar
+    eventos_conhecidos:
+      +column_types:
+        ticker: varchar
+        data: date
+        tipo: varchar
+        descricao: varchar
+        fonte_url: varchar
 
 models:
   stock_gold:

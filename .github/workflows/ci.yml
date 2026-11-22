@@ -58,7 +58,12 @@ jobs:
 
       - name: dbt build
         working-directory: dbt
-        run: dbt build --profiles-dir .
+        run: |
+          # O silver sintético para em 2026: o teste de freshness (fato_desatualizado) usa
+          # como "hoje" o dia seguinte ao último pregão da bolsa que termina antes.
+          hoje=$(python -c "import os, pandas as pd, datetime as dt; d = pd.read_parquet(os.environ['SILVER_PATH']).groupby('ticker')['data'].max().min(); print(pd.Timestamp(d).date() + dt.timedelta(days=1))")
+          echo "hoje=$hoje"
+          dbt build --profiles-dir . --vars "{hoje: '$hoje'}"
 
       - name: Exportar gold
         run: python scripts/exportar_gold.py --db "$DUCKDB_PATH" --saida data/amostra/gold
