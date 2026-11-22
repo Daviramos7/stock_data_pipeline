@@ -1,34 +1,16 @@
 """Exporta o gold do DuckDB para Parquet (o que a Fase 5 publica na Release).
 
 Rodar depois do `dbt build`:  python scripts/exportar_gold.py [--db ...] [--saida ...]
+A lógica mora em `stock_pipeline.pipeline.gold` (o orquestrador usa a mesma função).
 """
 from __future__ import annotations
 
 import argparse
 from pathlib import Path
 
-import duckdb
+from stock_pipeline.pipeline.gold import exportar
 
 RAIZ = Path(__file__).resolve().parent.parent
-TABELAS = {
-    "fato_cotacao_diaria": "order by ticker, data",
-    "dim_ativo": "order by ticker",
-    "dim_calendario": "order by bolsa, data",
-}
-
-
-def exportar(db: Path, saida: Path) -> dict[str, int]:
-    saida.mkdir(parents=True, exist_ok=True)
-    linhas = {}
-    with duckdb.connect(str(db), read_only=True) as con:
-        for tabela, ordem in TABELAS.items():
-            destino = (saida / f"{tabela}.parquet").as_posix()
-            con.execute(
-                f"copy (select * from {tabela} {ordem}) to '{destino}' "
-                "(format parquet, compression zstd)"
-            )
-            linhas[tabela] = con.execute(f"select count(*) from {tabela}").fetchone()[0]
-    return linhas
 
 
 def main() -> None:

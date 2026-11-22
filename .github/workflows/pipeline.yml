@@ -1,0 +1,151 @@
+# Pipeline diário (Fase 5): ingestão -> dbt build -> export do gold -> Release `data-latest`.
+#
+# Estado entre execuções: o runner é descartável, então o bronze/silver de ontem vem da
+# própria Release (`bronze.tar.gz`, `silver.parquet`) e o resultado volta pra lá.
+# Detalhes, rollback e custo: docs/fase5/orquestracao.md.
+name: pipeline
+
+on:
+  schedule:
+    # 09:17 UTC = 06:17 BRT (o Brasil não tem horário de verão desde 2019), seg a sáb.
+    # Pega os pregões fechados do dia anterior: sábado cobre a sexta; domingo não roda.
+    # Minuto quebrado de propósito: o GitHub atrasa ou descarta jobs agendados no pico das :00.
+    - cron: "17 9 * * 1-6"
+  workflow_dispatch:
+    inputs:
+      modo:
+        description: "diario (últimos 7 dias) ou backfill (intervalo)"
+        type: choice
+        options: [diario, backfill]
+        default: diario
+      inicio:
+        description: "backfill: primeiro dia, AAAA-MM-DD (vazio = 2015-01-01)"
+        type: string
+        default: ""
+      fim:
+        description: "backfill: último dia, inclusivo, AAAA-MM-DD (vazio = ontem)"
+        type: string
+        default: ""
+
+concurrency:
+  group: pipeline
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: data-latest
+      # Inputs só entram nos scripts via env (nunca interpolados direto no shell).
+      MODO: ${{ inputs.modo || 'diario' }}
+      INICIO: ${{ inputs.inicio }}
+      FIM: ${{ inputs.fim }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-pipeline.txt
+
+      - name: Instalar dependências do pipeline
+        run: pip install -r requirements-pipeline.txt -e .
+
+      - name: Validar inputs
+        run: |
+          for valor in "$INICIO" "$FIM"; do
+            if [ -n "$valor" ] && ! [[ "$valor" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+              echo "::error::data inválida: '$valor' (use AAAA-MM-DD)"; exit 1
+            fi
+          done
+
+      - name: Baixar estado da Release
+        run: |
+          mkdir -p data/silver _estado
+          if gh release view "$TAG" --json assets --jq '.assets[].name' > _estado/assets.txt 2>/dev/null \
+             && grep -qx 'bronze.tar.gz' _estado/assets.txt && grep -qx 'silver.parquet' _estado/assets.txt; then
+            gh release download "$TAG" --dir _estado --pattern bronze.tar.gz --pattern silver.parquet
+            tar -xzf _estado/bronze.tar.gz -C data
+            mv _estado/silver.parquet data/silver/cotacoes.parquet
+            echo "estado baixado: $(find data/bronze -name '*.parquet' | wc -l) partições de bronze"
+          else
+            echo "::warning::Release '$TAG' ou assets de estado ausentes: 1ª execução, forçando backfill desde 2015-01-01."
+            { echo "MODO=backfill"; echo "INICIO=2015-01-01"; } >> "$GITHUB_ENV"
+          fi
+
+      - name: Orquestrar
+        run: |
+          args=(--data-dir data orquestrar --modo "$MODO")
+          [ -n "$INICIO" ] && args+=(--inicio "$INICIO")
+          [ -n "$FIM" ] && args+=(--fim "$FIM")
+          echo "python -m stock_pipeline.pipeline.cli ${args[*]}"
+          python -m stock_pipeline.pipeline.cli "${args[@]}"
+
+      - name: Publicar na Release (só com data/PUBLICAR)
+        if: success() && github.ref == 'refs/heads/main'
+        run: |
+          if [ ! -f data/PUBLICAR ]; then
+            echo "::error::orquestrador saiu 0 mas não criou data/PUBLICAR"; exit 1
+          fi
+          mkdir -p _publicar
+          tar -czf _publicar/bronze.tar.gz -C data bronze
+          cp data/silver/cotacoes.parquet _publicar/silver.parquet
+          cp data/gold/fato_cotacao_diaria.parquet data/gold/dim_ativo.parquet \
+             data/gold/dim_calendario.parquet data/last_run.json _publicar/
+          ls -l _publicar
+
+          if ! gh release view "$TAG" > /dev/null 2>&1; then
+            gh release create "$TAG" --target "$GITHUB_SHA" --prerelease \
+              --title "Dados (último run)" \
+              --notes "Gerado pelo workflow pipeline.yml. Estado (bronze/silver) e gold do último run com sucesso; *.anterior = run anterior (1 nível de rollback)."
+          fi
+
+          # Asset a asset: apaga o .anterior velho, renomeia o atual pra .anterior, sobe o novo.
+          # (Rename pela API: sem baixar e sem subir de novo o que já está lá.)
+          api="repos/$GITHUB_REPOSITORY/releases"
+          release_id=$(gh api "$api/tags/$TAG" --jq '.id')
+          for arquivo in _publicar/*; do
+            nome=$(basename "$arquivo")
+            gh api "$api/$release_id/assets" --paginate --jq '.[] | "\(.id) \(.name)"' > _assets.txt
+            id_anterior=$(awk -v n="$nome.anterior" '$2 == n {print $1}' _assets.txt)
+            id_atual=$(awk -v n="$nome" '$2 == n {print $1}' _assets.txt)
+            [ -n "$id_anterior" ] && gh api -X DELETE "$api/assets/$id_anterior"
+            [ -n "$id_atual" ] && gh api -X PATCH "$api/assets/$id_atual" -f name="$nome.anterior" > /dev/null
+            gh release upload "$TAG" "$arquivo" --clobber
+          done
+
+      - name: Commitar status/last_run.json na main
+        if: always() && github.ref == 'refs/heads/main'
+        run: |
+          mkdir -p status
+          if [ -f data/last_run.json ]; then
+            cp data/last_run.json status/last_run.json
+          else
+            # O orquestrador nem chegou a rodar (instalação, download do estado...).
+            python - <<'PY'
+          import json, datetime
+          agora = datetime.datetime.now(datetime.timezone.utc)
+          json.dump({"iniciado_em_utc": agora.isoformat(timespec="seconds"), "status": "falha",
+                     "etapa_falhou": "antes_do_orquestrador", "erro": "ver log do run"},
+                    open("status/last_run.json", "w"), indent=2)
+          PY
+          fi
+          status=$(python -c "import json; print(json.load(open('status/last_run.json'))['status'])")
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add status/last_run.json
+          git commit -m "chore(pipeline): run $(date -u +%F) $status [skip ci]"
+          # Alguém pode ter dado push na main durante o run: rebase e tenta de novo.
+          for tentativa in 1 2 3; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep $((tentativa * 5))
+          done
+          echo "::error::não consegui dar push do status/last_run.json"; exit 1
