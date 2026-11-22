@@ -86,6 +86,12 @@ yfinance (sob demanda)
 
 Detalhes e justificativas no [ADR-001](docs/adr/ADR-001-stack.md).
 
+### Qualidade e alertas
+
+Todo run diário roda os testes do dbt sobre o gold: chave única, preço positivo, pregão faltando, linha em dia sem pregão, freshness por bolsa (erro), e salto de preço e volume 0 em pregão (aviso).
+Cada problema vira **uma** Issue no GitHub (rótulo `alerta-pipeline`), com exemplos, link do run e o que fazer. Ela recebe comentário só quando o conteúdo muda (ou a cada 7 dias) e fecha sozinha quando o problema some.
+Salto explicado (grupamento, fato relevante) entra em `dbt/seeds/eventos_conhecidos.csv`, sempre com link da fonte. Detalhes em [docs/fase6/alertas.md](docs/fase6/alertas.md).
+
 ---
 
 ## 🚀 Executar Localmente
