@@ -2,6 +2,9 @@
 
     python -m stock_pipeline.pipeline.cli diario
     python -m stock_pipeline.pipeline.cli backfill --inicio 2015-01-01 --fim 2026-11-21
+    python -m stock_pipeline.pipeline.cli orquestrar --modo diario|backfill [--inicio --fim]
+
+`orquestrar` (Fase 5) encadeia ingestão, dbt build e export do gold; ver orquestrar.py.
 
 `--fim` do backfill é o último dia INCLUSIVO (é cortado pra ontem se passar).
 Sai com código 1 se algum ticker falhou (útil pro alerta da Fase 5).
@@ -94,9 +97,19 @@ def main(argv=None) -> int:
     backfill = sub.add_parser("backfill", help="baixa um intervalo inteiro")
     backfill.add_argument("--inicio", type=_data, required=True)
     backfill.add_argument("--fim", type=_data, required=True, help="último dia, inclusivo")
+    orq = sub.add_parser("orquestrar", help="ingestão + dbt build + export do gold + last_run.json")
+    orq.add_argument("--modo", choices=["diario", "backfill"], default="diario")
+    orq.add_argument("--inicio", type=_data, help="backfill: padrão 2015-01-01")
+    orq.add_argument("--fim", type=_data, help="backfill: último dia, inclusivo (padrão ontem)")
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+    if args.comando == "orquestrar":
+        from .orquestrar import orquestrar
+
+        resultado = orquestrar(args.data_dir, modo=args.modo, inicio=args.inicio, fim=args.fim)
+        print(json.dumps(resultado, ensure_ascii=False, indent=2))
+        return 0 if resultado["status"] == "ok" else 1
     hoje = date.today()
     if args.comando == "diario":
         inicio, fim = janela_diaria(hoje, LOOKBACK_DIAS)
