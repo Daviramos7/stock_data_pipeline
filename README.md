@@ -5,7 +5,7 @@ Pipeline diário de cotações da B3 e dos EUA com camadas bronze/silver/gold, d
 [![CI](https://github.com/Daviramos7/stock_data_pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/Daviramos7/stock_data_pipeline/actions/workflows/ci.yml)
 [![pipeline](https://github.com/Daviramos7/stock_data_pipeline/actions/workflows/pipeline.yml/badge.svg)](https://github.com/Daviramos7/stock_data_pipeline/actions/workflows/pipeline.yml)
 
-**App:** [stockdatapipeline-jnuaqfhrnt8jts3ymssrsp.streamlit.app](https://stockdatapipeline-jnuaqfhrnt8jts3ymssrsp.streamlit.app/) · último run: [`status/last_run.json`](status/last_run.json)
+**App:** [https://stockdatapipeline.streamlit.app/](https://stockdatapipeline.streamlit.app/) · último run: [`status/last_run.json`](status/last_run.json)
 
 > ⚠️ **Projeto educacional. Não é recomendação de investimento.** Dados do Yahoo Finance via `yfinance` (não oficial).
 
