@@ -1,0 +1,39 @@
+version: 2
+
+models:
+  - name: fato_cotacao_diaria
+    description: >
+      Uma linha por ticker × pregão. Preço bruto do Yahoo (OHLC com split, sem provento),
+      adj_close, fator_ajuste = adj_close/close, OHLC ajustado (× fator, como auto_adjust=True)
+      e indicadores de stock_pipeline.indicators sobre o histórico inteiro do ticker, a partir do adj_close.
+    data_tests:
+      - unique_combinacao:
+          arguments: {colunas: ["ticker", "data"]}
+      - expressao_verdadeira:
+          name: fato_preco_ajustado_positivo
+          arguments: {expressao: "adj_close > 0 and open_ajustado > 0 and high_ajustado > 0 and low_ajustado > 0"}
+      - expressao_verdadeira:
+          name: fato_high_maior_igual_low
+          arguments: {expressao: "high >= low and high_ajustado >= low_ajustado"}
+    columns:
+      - name: ticker
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_ativo'), field: ticker}
+      - name: data
+        data_tests: [not_null]
+      - name: bolsa
+        data_tests: [not_null]
+      - name: open
+        data_tests: [not_null]
+      - name: high
+        data_tests: [not_null]
+      - name: low
+        data_tests: [not_null]
+      - name: close
+        data_tests: [not_null]
+      - name: adj_close
+        data_tests: [not_null]
+      - name: fator_ajuste
+        data_tests: [not_null]
