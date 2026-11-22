@@ -1,45 +1,26 @@
 {
-  "iniciado_em_utc": "2026-11-22T17:28:13+00:00",
-  "iniciado_em_brt": "2026-11-22T14:28:13-03:00",
-  "modo": "backfill",
-  "inicio": "2015-01-01",
+  "iniciado_em_utc": "2026-11-22T18:07:14+00:00",
+  "iniciado_em_brt": "2026-11-22T15:07:14-03:00",
+  "modo": "diario",
+  "inicio": "2026-11-15",
   "fim_exclusivo": "2026-11-22",
-  "status": "ok",
-  "etapa_falhou": null,
-  "erro": null,
+  "status": "falha",
+  "etapa_falhou": "ingestao",
+  "erro": "FalhaEtapa: falha simulada de propósito (simular_falha=true); nada foi baixado",
   "linhas_silver": 29708,
-  "linhas_fato": 29654,
-  "tickers_ok": [
-    "AAPL",
-    "BBAS3.SA",
-    "GOOGL",
-    "ITUB4.SA",
-    "MGLU3.SA",
-    "MSFT",
-    "NVDA",
-    "PETR4.SA",
-    "VALE3.SA",
-    "WEGE3.SA"
-  ],
+  "linhas_fato": null,
+  "tickers_ok": [],
   "tickers_falha": {},
   "dbt": {
-    "pass": 35,
-    "warn": 1,
+    "pass": 0,
+    "warn": 0,
     "error": 0,
     "skip": 0
   },
   "duracao_s": {
-    "ingestao": 2.148,
-    "dbt": 6.56,
-    "export": 0.083,
-    "total": 8.792
+    "ingestao": 0.001,
+    "total": 0.001
   },
-  "commit_sha": "c47cab96747994889849e11db9013910075a6535",
-  "run_url": "https://github.com/Daviramos7/stock_data_pipeline/actions/runs/45049560813",
-  "falhas_rebaixa": {},
-  "linhas_gold": {
-    "fato_cotacao_diaria": 29654,
-    "dim_ativo": 10,
-    "dim_calendario": 9496
-  }
+  "commit_sha": "22a4e5e780e77e4b17d379af5cf2d789dba38b9b",
+  "run_url": "https://github.com/Daviramos7/stock_data_pipeline/actions/runs/45053181412"
 }
