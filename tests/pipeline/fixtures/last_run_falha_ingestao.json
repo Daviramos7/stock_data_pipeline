@@ -1,0 +1,13 @@
+{
+  "iniciado_em_utc": "2026-11-23T09:20:00+00:00",
+  "iniciado_em_brt": "2026-11-23T06:20:00-03:00",
+  "modo": "diario",
+  "status": "falha",
+  "etapa_falhou": "ingestao",
+  "erro": "FalhaEtapa: tickers com falha: ['PETR4.SA'] rebaixa: []",
+  "tickers_ok": ["AAPL"],
+  "tickers_falha": {"PETR4.SA": "retorno vazio pra este ticker"},
+  "dbt": {"pass": 0, "warn": 0, "error": 0, "skip": 0},
+  "commit_sha": "abc123",
+  "run_url": "https://github.com/exemplo/repo/actions/runs/222"
+}
