@@ -4,6 +4,10 @@ from datetime import date, datetime, timezone
 
 import pytest
 
+# O orquestrador importa o gold, que depende do duckdb (requirements-pipeline.txt).
+# O job "smoke" do CI usa só o ambiente do app e pula este arquivo; o job "dbt" roda ele.
+pytest.importorskip("duckdb", reason="requer requirements-pipeline.txt (roda no job dbt do CI)")
+
 from stock_pipeline.pipeline import cli
 from stock_pipeline.pipeline.orquestrar import (
     FalhaEtapa, caminho_last_run, caminho_publicar, contar_dbt, janela, orquestrar,
