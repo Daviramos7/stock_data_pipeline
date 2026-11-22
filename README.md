@@ -42,7 +42,7 @@ Dashboard de análise técnica de ações construído com Streamlit e hospedado 
 - **Indicadores técnicos:**
   - Médias Móveis Simples (SMA 20 e SMA 50)
   - Bandas de Bollinger (±2 desvios padrão, janela 20)
-  - RSI — Índice de Força Relativa (janela 14)
+  - RSI de Wilder (14) — Índice de Força Relativa
   - Volatilidade Anual (janela 21, anualizada por √252)
   - Retorno Diário percentual
 - **KPIs em destaque:** preço atual, variação %, RSI, volatilidade e tendência vs SMA 20
