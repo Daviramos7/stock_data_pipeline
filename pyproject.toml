@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stock_pipeline"
+version = "0.4.0"
+description = "Pipeline bronze/silver/gold e indicadores do Stock Data Dashboard"
+requires-python = ">=3.13"
+# Sem dependências declaradas: o app instala requirements.txt e o pipeline
+# instala requirements-pipeline.txt. O pacote só existe para `pip install -e .`
+# dispensar o PYTHONPATH=src.
+dependencies = []
+
+[tool.setuptools.packages.find]
+where = ["src"]
