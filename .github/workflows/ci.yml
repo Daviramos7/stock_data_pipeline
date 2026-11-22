@@ -30,3 +30,35 @@ jobs:
 
       - name: Rodar testes
         run: python -m pytest -q
+
+  dbt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SILVER_PATH: ${{ github.workspace }}/data/amostra/cotacoes.parquet
+      DUCKDB_PATH: ${{ github.workspace }}/data/amostra/warehouse.duckdb
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Instalar dependências do pipeline
+        run: |
+          pip install -r requirements-pipeline.txt -r requirements-dev.txt
+          pip install -e .
+
+      - name: Testes (inclui conferência dos seeds)
+        run: python -m pytest -q
+
+      - name: Gerar silver sintético (sem rede)
+        run: python scripts/gerar_silver_amostra.py --saida "$SILVER_PATH"
+
+      - name: dbt build
+        working-directory: dbt
+        run: dbt build --profiles-dir .
+
+      - name: Exportar gold
+        run: python scripts/exportar_gold.py --db "$DUCKDB_PATH" --saida data/amostra/gold

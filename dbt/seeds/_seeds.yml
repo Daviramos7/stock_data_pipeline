@@ -1,0 +1,52 @@
+version: 2
+
+seeds:
+  - name: dim_ativo
+    description: "Um ativo por linha, gerado de src/stock_pipeline/config.py por scripts/gerar_dim_ativo.py."
+    columns:
+      - name: ticker
+        data_tests: [unique, not_null]
+      - name: bolsa
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments: {values: ["B3", "NYSE-NASDAQ"]}
+      - name: mercado
+        data_tests:
+          - accepted_values:
+              arguments: {values: ["BR", "EUA"]}
+      - name: moeda
+        data_tests:
+          - accepted_values:
+              arguments: {values: ["BRL", "USD"]}
+
+  - name: dim_calendario
+    description: "Todo dia corrido de 2015 a 2027 por bolsa, com eh_pregao. Gerado por scripts/gerar_calendario.py (exchange_calendars BVMF/XNYS)."
+    data_tests:
+      - unique_combinacao:
+          arguments: {colunas: ["bolsa", "data"]}
+    columns:
+      - name: bolsa
+        data_tests: [not_null]
+      - name: data
+        data_tests: [not_null]
+      - name: eh_pregao
+        data_tests: [not_null]
+
+  - name: excecoes_fonte
+    description: >
+      Falhas conhecidas e verificadas do Yahoo (não da lib de calendário).
+      linha_fantasma: linha em dia sem pregão (volume 0, OHLC = fechamento anterior), descartada do fato.
+      pregao_ausente_na_fonte: houve pregão mas a fonte não tem a linha; ignorado no teste de pregão faltando.
+    data_tests:
+      - unique_combinacao:
+          arguments: {colunas: ["bolsa", "data"]}
+    columns:
+      - name: tipo
+        data_tests:
+          - accepted_values:
+              arguments: {values: ["linha_fantasma", "pregao_ausente_na_fonte"]}
+      - name: bolsa
+        data_tests:
+          - relationships:
+              arguments: {to: ref('dim_ativo'), field: bolsa}

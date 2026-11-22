@@ -1,0 +1,11 @@
+ticker,nome,bolsa,mercado,moeda,fuso
+AAPL,Apple,NYSE-NASDAQ,EUA,USD,America/New_York
+BBAS3.SA,Banco do Brasil,B3,BR,BRL,America/Sao_Paulo
+GOOGL,Google,NYSE-NASDAQ,EUA,USD,America/New_York
+ITUB4.SA,Itaú Unibanco,B3,BR,BRL,America/Sao_Paulo
+MGLU3.SA,Magazine Luiza,B3,BR,BRL,America/Sao_Paulo
+MSFT,Microsoft,NYSE-NASDAQ,EUA,USD,America/New_York
+NVDA,Nvidia,NYSE-NASDAQ,EUA,USD,America/New_York
+PETR4.SA,Petrobras,B3,BR,BRL,America/Sao_Paulo
+VALE3.SA,Vale,B3,BR,BRL,America/Sao_Paulo
+WEGE3.SA,WEG,B3,BR,BRL,America/Sao_Paulo

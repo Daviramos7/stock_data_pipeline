@@ -13,3 +13,11 @@ etl.py
 .vscode/
 # Dados do pipeline (bronze/silver/_runs). Nunca vão pro git.
 data/
+
+# Fase 4: warehouse local e artefatos do dbt
+data/warehouse.duckdb
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
+*.egg-info/
+dbt/.user.yml

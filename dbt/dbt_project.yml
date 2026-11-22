@@ -1,0 +1,53 @@
+name: stock_gold
+version: "0.4.0"
+config-version: 2
+profile: stock_gold
+
+flags:
+  send_anonymous_usage_stats: false
+
+# Rodar sempre de dentro de dbt/ (os caminhos relativos partem daqui):
+#   cd dbt; dbt build --profiles-dir .
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages", "logs"]
+
+vars:
+  # Fonte do gold: o silver da Fase 3. O CI aponta para o silver sintético.
+  silver_path: "{{ env_var('SILVER_PATH', '../data/silver/cotacoes.parquet') }}"
+  # Salto diário de adj_close acima disto, sem provento/split no dia, gera warn.
+  limiar_salto: 0.25
+
+seeds:
+  stock_gold:
+    dim_calendario:
+      +column_types:
+        bolsa: varchar
+        data: date
+        eh_pregao: boolean
+    dim_ativo:
+      +column_types:
+        ticker: varchar
+        nome: varchar
+        bolsa: varchar
+        mercado: varchar
+        moeda: varchar
+        fuso: varchar
+    excecoes_fonte:
+      +column_types:
+        bolsa: varchar
+        data: date
+        tipo: varchar
+        motivo: varchar
+
+models:
+  stock_gold:
+    staging:
+      +materialized: view
+    intermediate:
+      +materialized: view
+    gold:
+      +materialized: table

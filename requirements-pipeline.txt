@@ -1,0 +1,9 @@
+# Dependências do pipeline (bronze/silver/gold). NÃO vão no requirements.txt,
+# que é o que o Streamlit Cloud instala. Inclui o requirements.txt para pandas,
+# numpy e pyarrow ficarem na mesma versão do app (uma fonte só de versão).
+# Conferido em Python 3.13.9 (Windows) em 22/11/2026.
+-r requirements.txt
+dbt-core~=1.12.7
+dbt-duckdb~=1.11.1
+duckdb~=2.0.1
+exchange_calendars~=4.13.3
