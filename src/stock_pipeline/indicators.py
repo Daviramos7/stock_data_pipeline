@@ -14,8 +14,9 @@ def processar_indicadores(df):
     df['Bollinger_Lower'] = df['SMA_20'] - (std * 2)
     
     delta = df['fechamento'].diff()
-    gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
-    loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+    # RSI de Wilder (14): média exponencial com alpha = 1/14.
+    gain = (delta.where(delta > 0, 0)).ewm(alpha=1/14, adjust=False, min_periods=14).mean()
+    loss = (-delta.where(delta < 0, 0)).ewm(alpha=1/14, adjust=False, min_periods=14).mean()
     rs = gain / loss
     df['RSI'] = 100 - (100 / (1 + rs))
     
