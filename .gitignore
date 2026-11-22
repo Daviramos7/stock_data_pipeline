@@ -11,3 +11,5 @@ etl.py
 
 # Arquivos de configuração do VS Code (Opcional, mas bom)
 .vscode/
+# Dados do pipeline (bronze/silver/_runs). Nunca vão pro git.
+data/
