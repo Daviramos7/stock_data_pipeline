@@ -1,0 +1,11 @@
+bolsa,data,tipo,motivo
+B3,2017-06-15,linha_fantasma,Corpus Christi: Yahoo devolve linha com volume 0 e OHLC = fechamento anterior
+B3,2017-09-07,linha_fantasma,Independência: Yahoo devolve linha com volume 0 e OHLC = fechamento anterior
+B3,2017-10-12,linha_fantasma,N. Sra. Aparecida: Yahoo devolve linha com volume 0 e OHLC = fechamento anterior
+B3,2017-11-02,linha_fantasma,Finados: Yahoo devolve linha com volume 0 e OHLC = fechamento anterior
+B3,2017-11-15,linha_fantasma,Proclamação da República: Yahoo devolve linha com volume 0 e OHLC = fechamento anterior
+B3,2017-11-20,linha_fantasma,Consciência Negra (feriado municipal SP): Yahoo devolve linha com volume 0 e OHLC = fechamento anterior
+B3,2017-12-25,linha_fantasma,Natal: Yahoo devolve linha com volume 0 e OHLC = fechamento anterior
+B3,2017-12-29,linha_fantasma,Último dia do ano sem pregão: Yahoo devolve linha com volume 0 e OHLC = fechamento anterior
+B3,2018-01-25,linha_fantasma,Aniversário de SP: Yahoo devolve linha com volume 0 e OHLC = fechamento anterior
+B3,2020-11-20,pregao_ausente_na_fonte,Houve pregão (Ibovespa -0.59% a 106042 pts; IstoÉ Dinheiro 20/11/2020) mas o Yahoo não tem a linha

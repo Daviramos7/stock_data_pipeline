@@ -1,0 +1,8 @@
+# Sem segredo: DuckDB local. Caminho relativo a dbt/ (de onde o dbt roda).
+stock_gold:
+  target: local
+  outputs:
+    local:
+      type: duckdb
+      path: "{{ env_var('DUCKDB_PATH', '../data/warehouse.duckdb') }}"
+      threads: 4
