@@ -1,14 +1,14 @@
 {
-  "iniciado_em_utc": "2026-11-25T19:19:39+00:00",
-  "iniciado_em_brt": "2026-11-25T16:19:39-03:00",
+  "iniciado_em_utc": "2026-11-26T19:02:44+00:00",
+  "iniciado_em_brt": "2026-11-26T16:02:44-03:00",
   "modo": "diario",
-  "inicio": "2026-11-18",
-  "fim_exclusivo": "2026-11-25",
+  "inicio": "2026-11-19",
+  "fim_exclusivo": "2026-11-26",
   "status": "ok",
   "etapa_falhou": null,
   "erro": null,
-  "linhas_silver": 29728,
-  "linhas_fato": 29674,
+  "linhas_silver": 29738,
+  "linhas_fato": 29684,
   "tickers_ok": [
     "AAPL",
     "BBAS3.SA",
@@ -29,16 +29,16 @@
     "skip": 0
   },
   "duracao_s": {
-    "ingestao": 1.172,
-    "dbt": 7.0,
-    "export": 0.085,
-    "total": 8.258
+    "ingestao": 1.707,
+    "dbt": 4.345,
+    "export": 0.06,
+    "total": 6.112
   },
-  "commit_sha": "f36ab78256afb6b65ac413a198a2bea09d575e2e",
-  "run_url": "https://github.com/Daviramos7/stock_data_pipeline/actions/runs/45683964360",
+  "commit_sha": "6ef8c94db8f6fd2255925e41b418c30c07499b24",
+  "run_url": "https://github.com/Daviramos7/stock_data_pipeline/actions/runs/45880568914",
   "falhas_rebaixa": {},
   "linhas_gold": {
-    "fato_cotacao_diaria": 29674,
+    "fato_cotacao_diaria": 29684,
     "dim_ativo": 10,
     "dim_calendario": 9496
   }
